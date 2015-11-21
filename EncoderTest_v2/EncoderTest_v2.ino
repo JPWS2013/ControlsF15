@@ -33,10 +33,10 @@ void setup()
   ST1.attach( 9, 1000, 2000);
   ST2.attach(10, 1000, 2000);
   pinMode(13, OUTPUT);
-  pinMode(2, INPUT_PULLUP);
+  pinMode(3, INPUT_PULLUP);
   //pinMode(2, INPUT_PULLUP);
   
-  attachInterrupt(digitalPinToInterrupt(2), rpm_fun, FALLING);
+  attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
   Serial.begin(115200);
   
   counts = 0;
@@ -53,7 +53,7 @@ void loop()
 //  counts=0;
 //  Serial.println(rpm, DEC);
 
-  ST2.write(45);
+  //ST2.write(0);
   
   if (counts>=12){
     
