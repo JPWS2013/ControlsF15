@@ -23,60 +23,51 @@ Servo ST1, ST2; // We'll name the Sabertooth servo channel objects ST1 and ST2.
 // Notice these attach() calls. The second and third arguments are important.
 // With a single argument, the range is 44 to 141 degrees, with 92 being stopped.
 // With all three arguments, we can use 0 to 180 degrees, with 90 being stopped.
+
+volatile byte counts;
+unsigned int rpm;
+unsigned long timeold;
+ 
 void setup()
 {
   ST1.attach( 9, 1000, 2000);
   ST2.attach(10, 1000, 2000);
   pinMode(13, OUTPUT);
+  pinMode(3, INPUT_PULLUP);
+  //pinMode(2, INPUT_PULLUP);
+  
+  attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
+  Serial.begin(115200);
+  
+  counts = 0;
+  rpm = 0;
+  timeold = 0;
 }
 
 void loop()
 {
-  int power;
+//  ST1.write(45);
+//
+//  rpm=60000/(millis()-timeold)*counts/12;
+//  timeold=millis();
+//  counts=0;
+//  Serial.println(rpm, DEC);
+
+  //ST2.write(0);
   
-  // Ramp both servo channels from 0 to 180 (full reverse to full forward),
-  // waiting 20 ms (1/50th of a second) per value.
-  for (power = 90; power >= 0; power --)
-  {
-    ST1.write(power);
-    ST2.write(90);
-    digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(50);              // wait for a second
-    digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-    delay(50); 
-    //delay(20);
+  if (counts>=12){
+    
+    rpm = 60000/(millis() - timeold)*counts/12;
+    timeold = millis();
+    counts = 0;
+    Serial.println(rpm,DEC);
   }
-  
-  // Now go back the way we came.
-  for (power = 0; power <= 90; power ++)
-  {
-    ST1.write(power);
-    ST2.write(90);
-    digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(50);              // wait for a second
-    digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-    delay(50); 
-    //delay(20);
-  }
-  for (power = 90; power <= 180; power ++)
-  {
-    ST1.write(power);
-    ST2.write(90);
-    digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(50);              // wait for a second
-    digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-    delay(50); 
-    //delay(20);
-  }
-  for (power = 180; power >= 90; power --)
-  {
-    ST1.write(power);
-    ST2.write(90);
-    digitalWrite(13, HIGH);   // turn the LED on (HIGH is the voltage level)
-    delay(50);              // wait for a second
-    digitalWrite(13, LOW);    // turn the LED off by making the voltage LOW
-    delay(50); 
-    //delay(20);
-  }
-  
+
+  //rpm_output=rpm/99;
 }
+
+void rpm_fun()
+ {
+   counts++;
+   //Each rotation, this interrupt function is run 12 times
+ }
