@@ -36,8 +36,13 @@ void setup()
   pinMode(3, INPUT_PULLUP);
   //pinMode(2, INPUT_PULLUP);
   
-  attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
+  //attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
   Serial.begin(115200);
+
+  noInterrupts();
+  ST1.write(90);
+  delay(1000);
+  interrupts();
   
   counts = 0;
   rpm = 0;
@@ -46,7 +51,8 @@ void setup()
 
 void loop()
 {
-//  ST1.write(45);
+  
+  ST1.write(90);
 //
 //  rpm=60000/(millis()-timeold)*counts/12;
 //  timeold=millis();
@@ -55,12 +61,14 @@ void loop()
 
   //ST2.write(0);
   
-  if (counts>=12){
+  if (counts>=4){
     
     rpm = 60000/(millis() - timeold)*counts/12;
     timeold = millis();
     counts = 0;
-    Serial.println(rpm,DEC);
+    Serial.print(rpm,DEC);
+    Serial.println(F(""));
+    
   }
 
   //rpm_output=rpm/99;
