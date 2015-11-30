@@ -13,7 +13,7 @@ float two_err=0;
 float one_out=0;
 float two_out=0;
 float angle=0;
-float des_ang=0;
+float des_ang=-1.5;
 float curr_out=0;
 int motor_out=0;
 int motor_diff=0;
@@ -75,7 +75,7 @@ void loop() {
 
   ST1.write(motor_out);
  
-  Serial.println(motor_out);
+  Serial.println(ang);
 
 }
 
