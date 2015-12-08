@@ -72,7 +72,7 @@ void loop() {
   
   curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
  
-  Serial.println(curr_pos/2);
+  Serial.println(vel_copy);
   Serial.println(F(""));
 
 }

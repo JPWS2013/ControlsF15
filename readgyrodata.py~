@@ -1,0 +1,18 @@
+import serial
+import csv
+import datetime
+
+ser_obj=serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+
+with open('Data3/test.csv', 'wb') as csvfile:
+	spamwriter = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+	while True:	
+		message=ser_obj.readline()
+		result=message.strip().split(',')
+
+		if len(result)==1:
+
+			#spamwriter.writerow(float(result[0]))
+
+			print float(result[0])
