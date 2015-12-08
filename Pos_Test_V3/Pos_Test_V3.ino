@@ -26,16 +26,16 @@ int sweepcount_copy=0;
 void setup() {
   //Set the nointerrupt call so that setting the registers isn't interrupted by the interrupt
   noInterrupts();
-  //set timer0 interrupt every 2ms (500Hz)
+  //set timer0 interrupt every 15.4ms (65Hz)
   TCCR0A = 0; //Set the TCCR0A register to 0
   TCCR0B = 0;// same for TCCR0B
   TCNT0  = 0;//initialize counter value to 0
   //set compare match register for 500Hz increments
-  OCR0A=124;
+  OCR0A=239;
   // turn on CTC mode
   TCCR0A |= (1 << WGM01);
-  // Set CS02 bit for 256 prescaler (that gives us 124 counts per interrupt to achieve 2ms interrupt)
-  TCCR0B |= (1 << CS02);   
+  // Set CS02 and CS00 bits for 1024 prescaler (that gives us 239 counts per interrupt to achieve 2ms interrupt)
+  TCCR0B |= (1 << CS02) | (1 << CS00);   
   // enable timer compare interrupt
   TIMSK0 |= (1 << OCIE0A);
   interrupts();
