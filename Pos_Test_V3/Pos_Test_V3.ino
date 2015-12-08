@@ -1,27 +1,42 @@
 #include <Servo.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_LSM303_U.h>
+#include <Adafruit_L3GD20_U.h>
+#include <Adafruit_9DOF.h>
 
 Servo ST1;
 Servo ST2;
 
-volatile int val=0;
-int val_copy=0;
-float volts=0;
-float ang=0;
+//volatile int val=0;
+//int val_copy=0;
+//float volts=0;
+//float ang=0;
+
+float curr_g=0;
+float one_g=0;
+float one_pos=0;
+float curr_pos=0;
 
 float curr_err=0;
 float one_err=0;
 float two_err=0;
 float one_out=0;
 float two_out=0;
-float angle=0;
-float des_ang=0;
+
+//float angle=0;
+float des_pos=0;
 float curr_out=0;
 int motor_out=0;
 int motor_diff=0;
 
-volatile int sweepcount=0;
-int sweepcount_copy=0;
+volatile float vel=0;
+float vel_copy=0;
 
+volatile int count=0;
+int count_copy=0;
+
+Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 
 void setup() {
   //Set the nointerrupt call so that setting the registers isn't interrupted by the interrupt
@@ -46,27 +61,41 @@ void setup() {
   ST2.write(0);
   Serial.begin(9600);
 
+    if(!gyro.begin())
+  {
+    /* There was a problem detecting the L3GD20 ... check your connections */
+    Serial.print("Ooops, no L3GD20 detected ... Check your wiring or I2C ADDR!");
+    while(1);
+  }
+
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
 
   noInterrupts();
-  val_copy=val;
-  sweepcount_copy=sweepcount;
-  //val=0;
+  vel_copy=vel;
+  count_copy=count;
+  count=0;
   interrupts();
 
-  one_err=curr_err;
-  two_err=one_err;
-  one_out=curr_out;
-  two_out=one_out;
+//  if (count_copy>=30){
+//    des_pos=1.57;
+//  }
   
-  volts=(val_copy*0.0049)-2.32+0.1;
-  ang=volts/1.13;
+  one_g=curr_g;
+  curr_g=vel_copy;
+  one_pos=curr_pos;
 
-  curr_err=des_ang-ang;
-  curr_out= (1.662*one_out) - (0.6637*two_out) + (2.697*curr_err) - (5.255*one_err) + (2.559*two_err);
+  curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
+
+  two_err=one_err;
+  one_err=curr_err;
+  curr_err=des_pos-(curr_pos/2);
+  two_out=one_out;
+  one_out=curr_out;
+
+  curr_out=(0.6555*curr_err) - (1.3*one_err) + (0.6443*two_err) + (1.877*one_out) - (0.8756*two_out);
 
   motor_diff=curr_out*35;
 
@@ -83,24 +112,23 @@ void loop() {
   ST1.write(motor_out);
   ST2.write(0);
  
-  Serial.println(ang);
+  Serial.print(curr_out);Serial.print(",");Serial.print(curr_err);Serial.print(",");Serial.print(two_out);
+  Serial.println(" ");
 
-  if (sweepcount_copy>=2500){
-    if (des_ang==1.5){
-      des_ang=0;
-    }
-    else if (des_ang==0){
-      des_ang=1.5;
-    }
+ }
 
-    sweepcount=0;
-  }
+ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets pot reading
+  sei();
+    /* Get a new sensor event */
+  sensors_event_t event;
+   
+  /* Display the results (gyrocope values in rad/s) */
+  gyro.getEvent(&event);
+//  Serial.print(F("GYRO  "));
+  vel=event.gyro.z;
 
-}
-
-ISR(TIMER0_COMPA_vect){//timer0 interrupt 500Hz and gets pot reading
-  val=analogRead(0);
-  sweepcount++;
+  cli();
+//  count++;
 }
 
 //void ReadSensors(void)
