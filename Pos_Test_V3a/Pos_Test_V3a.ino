@@ -8,11 +8,6 @@
 Servo ST1;
 Servo ST2;
 
-//volatile int val=0;
-//int val_copy=0;
-//float volts=0;
-//float ang=0;
-
 float curr_g=0;
 float one_g=0;
 float one_pos=0;
@@ -21,17 +16,19 @@ float curr_pos=0;
 float curr_err=0;
 float one_err=0;
 float two_err=0;
+float three_err=0;
 float one_out=0;
 float two_out=0;
+float three_out=0;
 
-//float angle=0;
 float des_pos=0;
-float curr_out=0;
+volatile float curr_out=0;
+float curr_out_copy=0;
 int motor_out=0;
 int motor_diff=0;
 
-volatile float vel=0;
-float vel_copy=0;
+float vel=0;
+//float vel_copy=0;
 
 volatile int count=0;
 int count_copy=0;
@@ -74,30 +71,31 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   noInterrupts();
-  vel_copy=vel;
+//  vel_copy=vel;
+  curr_out_copy=curr_out;
   count_copy=count;
   interrupts();
 
-  if (count_copy>=180){
-    des_pos=-1.57;
-    count=0;
-  }
+//  if (count_copy>=180){
+//    des_pos=-0.785;
+//    count=0;
+//  }
   
-  one_g=curr_g;
-  curr_g=vel_copy;
-  one_pos=curr_pos;
+//  one_g=curr_g;
+//  curr_g=vel_copy;
+//  one_pos=curr_pos;
+//
+//  curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
+//
+//  two_err=one_err;
+//  one_err=curr_err;
+//  curr_err=des_pos-(curr_pos/2);
+//  two_out=one_out;
+//  one_out=curr_out;
+//
+//  curr_out=(0.4429*curr_err) - (0.8782*one_err) + (0.4353*two_err) + (1.877*one_out) - (0.8765*two_out);
 
-  curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
-
-  two_err=one_err;
-  one_err=curr_err;
-  curr_err=des_pos-(curr_pos/2);
-  two_out=one_out;
-  one_out=curr_out;
-
-  curr_out=(0.4423*curr_err) - (0.877*one_err) + (0.4347*two_err) + (1.877*one_out) - (0.8767*two_out);
-
-  motor_diff=curr_out*35;
+  motor_diff=curr_out_copy*35;
 
   if (motor_diff>-25 && motor_diff<-3){
     motor_diff=-25;
@@ -107,34 +105,44 @@ void loop() {
     motor_diff=25;
   }
   
-  motor_out=-motor_diff+90;
+  motor_out=motor_diff+90;
 
   ST1.write(motor_out);
-  ST2.write(180);
+  ST2.write(0);
 
-  Serial.println(curr_out);
+  Serial.println(motor_out);
  
   //Serial.print(curr_out);Serial.print(",");Serial.print(curr_err);Serial.print(",");Serial.print(two_out);
   //Serial.println(" ");
 
  }
 
-ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets pot reading
+ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
   sei();
     /* Get a new sensor event */
   sensors_event_t event;
    
   /* Display the results (gyrocope values in rad/s) */
   gyro.getEvent(&event);
-//  Serial.print(F("GYRO  "));
   vel=event.gyro.z;
 
   cli();
+
+  one_g=curr_g;
+  curr_g=vel;
+  one_pos=curr_pos;
+
+  curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
+
+  three_err=two_err;
+  two_err=one_err;
+  one_err=curr_err;
+  curr_err=des_pos-(curr_pos/2);
+  three_out=two_out;
+  two_out=one_out;
+  one_out=curr_out;
+
+  curr_out=(213.7*curr_err) - (636.5*one_err) + (632*two_err) - (209.2*three_err) + (0.8765*one_out) + (two_out) - (0.8765*three_out);
   count++;
 }
-
-//void ReadSensors(void)
-//{
-//  val=analogRead(0);
-//}
 
