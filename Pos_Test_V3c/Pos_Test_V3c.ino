@@ -17,9 +17,13 @@ float curr_err=0;
 float one_err=0;
 float two_err=0;
 float three_err=0;
+float four_err=0;
+float five_err=0;
 float one_out=0;
 float two_out=0;
 float three_out=0;
+float four_out=0;
+float five_out=0;
 
 float des_pos=0;
 volatile float curr_out=0;
@@ -134,16 +138,20 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
 
   curr_pos=one_pos+0.007692*curr_g+0.007692*one_g;
 
+//  five_err=four_err;
+  four_err=three_err;
   three_err=two_err;
   two_err=one_err;
   one_err=curr_err;
   curr_err=des_pos-(curr_pos/2);
+//  five_out=four_out;
+  four_out=three_out;
   three_out=two_out;
   two_out=one_out;
   one_out=curr_out;
 
-  //curr_out=(8.976*curr_err) - (26.66*one_err) + (26.39*two_err) - (8.707*three_err) + (2.612*one_out) - (2.256*two_out) + (0.6445*three_out);
-  curr_out=(9.049*curr_err) - (26.87*one_err) + (26.6*two_err) - (8.778*three_err) + (2.61*one_out) - (2.253*two_out) + (0.6428*three_out);
+//  curr_out=(0.09811*curr_err) - (0.1903*one_err) - (0.005797*two_err) + (0.1903*three_err) - (0.09231*four_err) + (3.487*one_out) - (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
+  curr_out=(15.03*curr_err) - (59.04*one_err) + (86.93*two_err) - (56.89*three_err) + (13.96*four_err) + (3.487*one_out) - (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
   count++;
 }
 
