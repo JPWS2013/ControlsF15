@@ -24,9 +24,11 @@ Servo ST1, ST2; // We'll name the Sabertooth servo channel objects ST1 and ST2.
 // With a single argument, the range is 44 to 141 degrees, with 92 being stopped.
 // With all three arguments, we can use 0 to 180 degrees, with 90 being stopped.
 
-volatile byte counts;
+volatile unsigned int counts;
+unsigned int counts_copy;
 unsigned int rpm;
 unsigned long timeold;
+unsigned long time_copy;
  
 void setup()
 {
@@ -36,11 +38,11 @@ void setup()
   pinMode(3, INPUT_PULLUP);
   //pinMode(2, INPUT_PULLUP);
   
-  //attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
+  attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
   Serial.begin(115200);
 
   noInterrupts();
-  ST1.write(90);
+  ST2.write(90);
   delay(1000);
   interrupts();
   
@@ -52,7 +54,7 @@ void setup()
 void loop()
 {
   
-  ST1.write(90);
+  ST2.write(0);
 //
 //  rpm=60000/(millis()-timeold)*counts/12;
 //  timeold=millis();
@@ -61,11 +63,18 @@ void loop()
 
   //ST2.write(0);
   
-  if (counts>=4){
+  if (counts>=8){
+
+    cli();
+    counts_copy=counts;
+    time_copy=millis()-timeold;
+    timeold=millis();
+    counts=0;
+    sei();
     
-    rpm = 60000/(millis() - timeold)*counts/12;
-    timeold = millis();
-    counts = 0;
+    rpm = 60000/(time_copy)*counts_copy/12;
+//    timeold = millis();
+//    counts = 0;
     Serial.print(rpm,DEC);
     Serial.println(F(""));
     

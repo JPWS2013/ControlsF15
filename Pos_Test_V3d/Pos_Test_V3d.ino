@@ -38,6 +38,12 @@ float vel=0;
 volatile int count=0;
 int count_copy=0;
 
+volatile unsigned int counts;
+unsigned int counts_copy;
+unsigned int rpm;
+unsigned long timeold;
+unsigned long time_copy;
+
 Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 
 void setup() {
@@ -61,6 +67,8 @@ void setup() {
   ST2.attach(10, 1000, 2000);
   ST1.write(90);
   ST2.write(0);
+  pinMode(3, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(3), rpm_fun, FALLING);
   Serial.begin(9600);
 
     if(!gyro.begin())
@@ -99,10 +107,21 @@ void loop() {
 //  one_out=curr_out;
 //
 //  curr_out=(0.4429*curr_err) - (0.8782*one_err) + (0.4353*two_err) + (1.877*one_out) - (0.8765*two_out);
-//  if (curr_out_copy>0){
-//    curr_out_copy=curr_out_copy*1.55;
-//  }
-  
+   if (counts>=8){
+    cli();
+    counts_copy=counts;
+    time_copy=millis()-timeold;
+    timeold=millis();
+    counts=0;
+    sei();
+    
+    rpm = 60000/(time_copy)*counts_copy/12;
+//    timeold = millis();
+//    counts = 0;
+//    Serial.print(rpm,DEC);
+//    Serial.println(F(""));
+    
+  }
   motor_diff_raw=curr_out_copy*90;
 
     if (motor_diff_raw<-0.5){
@@ -113,22 +132,20 @@ void loop() {
     motor_diff=(motor_diff_raw+(1.5*25))/1.5;
   }
   
-//  if (motor_diff_raw>-35 && motor_diff_raw<-0.5){
-//    motor_diff=0;
+//  if (motor_diff>-35 && motor_diff<-0.5){
+//    motor_diff=-35;
 //  }
 //
-//  else if (motor_diff_raw<35 && motor_diff_raw>0.5){
-//    motor_diff=0;
+//  if (motor_diff<35 && motor_diff>0.5){
+//    motor_diff=35;
 //  }
-//  else{
-//    motor_diff=motor_diff_raw;
-//  }
+  
   motor_out=motor_diff+90;
 
   ST1.write(motor_out);
   ST2.write(0);
 
-  Serial.println(curr_err);
+  Serial.println(rpm);
  
   //Serial.print(curr_out);Serial.print(",");Serial.print(curr_err);Serial.print(",");Serial.print(two_out);
   //Serial.println(" ");
@@ -170,3 +187,8 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
   count++;
 }
 
+void rpm_fun()
+ {
+   counts++;
+   //Each rotation, this interrupt function is run 12 times
+ }
