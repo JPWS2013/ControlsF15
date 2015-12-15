@@ -8,8 +8,6 @@
 Servo ST1;
 Servo ST2;
 
-short on_off=0;
-
 float curr_g=0;
 float one_g=0;
 float one_pos=0;
@@ -50,16 +48,15 @@ void setup() {
   TCCR0B = 0;// same for TCCR0B
   TCNT0  = 0;//initialize counter value to 0
   //set compare match register for 500Hz increments
-  OCR0A=239;
+  OCR0A=250;
   // turn on CTC mode
   TCCR0A |= (1 << WGM01);
-  // Set CS02 and CS00 bits for 1024 prescaler (that gives us 239 counts per interrupt to achieve 2ms interrupt)
-  TCCR0B |= (1 << CS02) | (1 << CS00);   
+  // Set CS02 bit for 256 prescaler (that gives us 250 counts per interrupt)
+  TCCR0B |= (1 << CS02);//| (1 << CS00);   
   // enable timer compare interrupt
   TIMSK0 |= (1 << OCIE0A);
   interrupts();
 
-  pinMode(11, OUTPUT);
   ST1.attach(9, 1000, 2000);
   ST2.attach(10, 1000, 2000);
   ST1.write(90);
@@ -131,7 +128,7 @@ void loop() {
 //  ST1.write(motor_out);
 //  ST2.write(0);
 
-  Serial.println(motor_diff);
+  Serial.println(curr_out_copy);
  
   //Serial.print(curr_out);Serial.print(",");Serial.print(curr_err);Serial.print(",");Serial.print(two_out);
   //Serial.println(" ");
@@ -169,41 +166,26 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
 
 //  curr_out=(0.09811*curr_err) - (0.1903*one_err) - (0.005797*two_err) + (0.1903*three_err) - (0.09231*four_err) + (3.487*one_out) - (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
 //  curr_out=(0.1944*curr_err) - (0.005663*one_err) - (0.01204*two_err) + (0.01133*three_err) + (0.006019*four_err) - (0.005667*five_err) + (4.364*one_out)- (7.601*two_out) + (6.603*three_out) - (2.861*four_out) + (0.4946*five_out);
-//  MATCHED ALPHA OF 3 curr_out=(0.1982*curr_err) - (0.5864*one_err) + (0.5784*two_err) - (0.1902*three_err) + (3.543*one_out)- (4.687*two_out) + (2.745*three_out) - (0.5999*four_out);
-//  TUSTIN ALPHA OF 3 curr_out=(0.09994*curr_err) - (0.1958*one_err) - (0.004033*two_err) + (0.1958*three_err) - (0.0959*four_err) + (3.541*one_out)- (4.682*two_out) + (2.74*three_out) - (0.5983*four_out);
-//  TUSTIN ALPHA OF 10 curr_out=(0.1764*curr_err) - (0.3475*one_err) - (0.005278*two_err) + (0.3475*three_err) - (0.1711*four_err) + (3.487*one_out)- (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
-  curr_out=(0.3495*curr_err) - (1.038*one_err) + (1.028*two_err) - (0.339*three_err) + (3.489*one_out)- (4.548*two_out) + (2.624*three_out) - (0.5655*four_out);
+//  WORKIGN LAST NIGHT curr_out=(0.1944*curr_err) - (0.5716*one_err) + (0.5601*two_err) - (0.1829*three_err) + (3.489*one_out)- (4.548*two_out) + (2.624*three_out) - (0.5655*four_out);
+  curr_out=(0.06103*curr_err) - (0.1824*one_err) + (0.1818*two_err) - (0.06038*three_err) + (3.871*one_out)- (5.618*two_out) + (3.622*three_out) - (0.8756*four_out);
 //  ALPHA OF 2, MATCHED curr_out=(0.1633*curr_err) - (0.4823*one_err) + (0.4749*two_err) - (0.1559*three_err) + (3.555*one_out)- (4.72*two_out) + (2.773*three_out) - (0.6079*four_out);
 //  ALPHA OF 5, TUSTIN curr_out=(0.1274*curr_err) - (0.2502*one_err) - (0.004479*two_err) + (0.2502*three_err) - (0.1229*four_err) + (3.521*one_out)- (4.632*two_out) + (2.696*three_out) - (0.586*four_out);
 
   count++;
 
-  motor_diff_raw=curr_out*45;
+  motor_diff_raw=curr_out_copy*90;
 
-  if (motor_diff_raw<-5){
-    motor_diff=(motor_diff_raw+(1.3*(-15)))/1.3;
+  if (motor_diff_raw<-0.5){
+    motor_diff=(motor_diff_raw+(1.5*(-25)))/1.5;
   }
 
-  else if (motor_diff_raw>5){
-    motor_diff=((motor_diff_raw+(1.3*15))/1.3)*1.25;
-  }
-  else {
-    motor_diff=motor_diff_raw;
+  if (motor_diff_raw>0.5){
+    motor_diff=(motor_diff_raw+(1.5*25))/1.5;
   }
 
   motor_out=motor_diff+90;
 
   ST1.write(motor_out);
   ST2.write(0);
-
-  if (on_off==0){
-    digitalWrite(11, HIGH);
-    on_off=1;
-  }
-
-  else if (on_off==1){
-    digitalWrite(11, LOW);
-    on_off=0;
-  }
 }
 

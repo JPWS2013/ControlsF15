@@ -4,6 +4,8 @@ Servo ST1;
 Servo ST2;
 
 volatile int val=0;
+volatile int despos=0;
+int despos_copy=0;
 int val_copy=0;
 float volts=0;
 float ang=0;
@@ -53,14 +55,18 @@ void loop() {
 
   noInterrupts();
   val_copy=val;
-  sweepcount_copy=sweepcount;
+  despos_copy=despos;
+//  sweepcount_copy=sweepcount;
   //val=0;
   interrupts();
 
-  one_err=curr_err;
+  des_ang=((despos_copy/1023.0*5.0)-2.5)/5.0*3.1415926;
+  
   two_err=one_err;
-  one_out=curr_out;
+  one_err=curr_err;
   two_out=one_out;
+  one_out=curr_out;
+  
   
   volts=(val_copy*0.0049)-2.32+0.1;
   ang=volts/1.13;
@@ -68,7 +74,7 @@ void loop() {
   curr_err=des_ang-ang;
   curr_out= (1.662*one_out) - (0.6637*two_out) + (2.697*curr_err) - (5.255*one_err) + (2.559*two_err);
 
-  motor_diff=curr_out*35;
+  motor_diff=curr_out*140;
 
   if (motor_diff>-25 && motor_diff<-3){
     motor_diff=-25;
@@ -83,24 +89,25 @@ void loop() {
   ST1.write(motor_out);
   ST2.write(0);
  
-  Serial.println(ang);
+  Serial.println(motor_out);
 
-  if (sweepcount_copy>=2500){
-    if (des_ang==1.5){
-      des_ang=0;
-    }
-    else if (des_ang==0){
-      des_ang=1.5;
-    }
-
-    sweepcount=0;
-  }
+//  if (sweepcount_copy>=2500){
+//    if (des_ang==1.5){
+//      des_ang=0;
+//    }
+//    else if (des_ang==0){
+//      des_ang=1.5;
+//    }
+//
+//    sweepcount=0;
+//  }
 
 }
 
 ISR(TIMER0_COMPA_vect){//timer0 interrupt 500Hz and gets pot reading
   val=analogRead(0);
-  sweepcount++;
+  despos=analogRead(1);
+//  sweepcount++;
 }
 
 //void ReadSensors(void)
