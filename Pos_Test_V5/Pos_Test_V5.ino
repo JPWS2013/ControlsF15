@@ -27,9 +27,10 @@ float three_out=0;
 float four_out=0;
 float five_out=0;
 
-float des_pos=0;
+float des_pos=1.57;
 float curr_out=0;
 float curr_out_copy=0;
+float curr_out_minor=0;
 int motor_out=0;
 float motor_diff=0;
 float motor_diff_raw=0;
@@ -37,9 +38,25 @@ float motor_diff_raw=0;
 volatile float vel=0;
 float vel_copy=0;
 
+volatile int pos=0;
 volatile int count=0;
 int count_copy=0;
 
+volatile unsigned int counts;
+unsigned int counts_copy;
+unsigned int rpm;
+unsigned long timeold;
+unsigned long time_copy;
+
+volatile int raw_pos=0;
+int raw_pos_copy=0;
+float one_motor_pos=0;
+float curr_motor_pos=0;
+float curr_vel=0;
+
+float curr_comp_in=0;
+float one_comp_in=0;
+float curr_comp_out=0;
 
 Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 
@@ -63,9 +80,15 @@ void setup() {
   pinMode(11, OUTPUT);
   ST1.attach(9, 1000, 2000);
   ST2.attach(10, 1000, 2000);
+  pinMode(13, OUTPUT);
+  pinMode(3, INPUT_PULLUP);
   ST1.write(90);
   ST2.write(0);
   Serial.begin(115200);
+
+  counts = 0;
+  rpm = 0;
+  timeold = 0;
 
     if(!gyro.begin())
   {
@@ -81,9 +104,22 @@ void loop() {
 
   noInterrupts();
   vel_copy=vel;
+  raw_pos_copy=pos;
 //  curr_out_copy=curr_out;
 //  counts_copy=counts;
   interrupts();
+
+//  if (count_copy>=180){
+//    des_pos=-0.785;
+//    count=0;
+//  }
+
+  one_motor_pos=curr_motor_pos;
+  curr_motor_pos=(raw_pos_copy*0.0049)-2.32+0.1;
+
+  curr_vel=64.97*curr_motor_pos-64.97*one_motor_pos;
+
+
   
   one_g=curr_g;
   curr_g=vel_copy;
@@ -107,12 +143,16 @@ void loop() {
 //  curr_out=(0.1944*curr_err) - (0.005663*one_err) - (0.01204*two_err) + (0.01133*three_err) + (0.006019*four_err) - (0.005667*five_err) + (4.364*one_out)- (7.601*two_out) + (6.603*three_out) - (2.861*four_out) + (0.4946*five_out);
 //  MATCHED ALPHA OF 3 curr_out=(0.1982*curr_err) - (0.5864*one_err) + (0.5784*two_err) - (0.1902*three_err) + (3.543*one_out)- (4.687*two_out) + (2.745*three_out) - (0.5999*four_out);
 //  TUSTIN ALPHA OF 3 curr_out=(0.09994*curr_err) - (0.1958*one_err) - (0.004033*two_err) + (0.1958*three_err) - (0.0959*four_err) + (3.541*one_out)- (4.682*two_out) + (2.74*three_out) - (0.5983*four_out);
-  curr_out=(0.1764*curr_err) - (0.3475*one_err) - (0.005278*two_err) + (0.3475*three_err) - (0.1711*four_err) + (3.487*one_out)- (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
-//  curr_out=(0.3495*curr_err) - (1.038*one_err) + (1.028*two_err) - (0.339*three_err) + (3.489*one_out)- (4.548*two_out) + (2.624*three_out) - (0.5655*four_out);
+//  TUSTIN ALPHA OF 10 curr_out=(0.1764*curr_err) - (0.3475*one_err) - (0.005278*two_err) + (0.3475*three_err) - (0.1711*four_err) + (3.487*one_out)- (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
+  curr_out=(24.98*curr_err) - (22.33*one_err) + (0.3253*one_out);
 //  ALPHA OF 2, MATCHED curr_out=(0.1633*curr_err) - (0.4823*one_err) + (0.4749*two_err) - (0.1559*three_err) + (3.555*one_out)- (4.72*two_out) + (2.773*three_out) - (0.6079*four_out);
 //  ALPHA OF 5, TUSTIN curr_out=(0.1274*curr_err) - (0.2502*one_err) - (0.004479*two_err) + (0.2502*three_err) - (0.1229*four_err) + (3.521*one_out)- (4.632*two_out) + (2.696*three_out) - (0.586*four_out);
-//curr_out=(0.6555*curr_err) - (1.3*one_err) + (0.6443*two_err) + (1.877*one_out) - (0.8756*two_out);  
-  motor_diff=curr_out*90;
+
+// one_comp_in=curr_comp_in;
+// curr_comp_in=curr_out;
+// curr_comp_out=64.97*curr_comp_in-64.97*one_comp_in;
+ curr_out_minor=curr_out-(0.001*curr_vel);
+// motor_out=((((sq(curr_out_minor)/36)*3000)/(1+(sq(curr_out_minor)/36)))-1000)/1000*180;
 
 //    if (motor_diff_raw<-0.5){
 //    motor_diff=(motor_diff_raw+(1.5*(-25)))/1.5;
@@ -132,12 +172,12 @@ void loop() {
 //  else{
 //    motor_diff=motor_diff_raw;
 //  }
-  motor_out=motor_diff+90;
+  motor_out=(curr_out_minor*10)+90;
 
   ST1.write(motor_out);
   ST2.write(0);
 
-  Serial.println(motor_diff);
+  Serial.println(curr_comp_out);
  
   //Serial.print(curr_out);Serial.print(",");Serial.print(curr_err);Serial.print(",");Serial.print(two_out);
   //Serial.println(" ");
@@ -154,7 +194,7 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
   vel=event.gyro.z;
 
   cli();
-  count++;
+  pos=analogRead(0);
 
 //  motor_diff_raw=curr_out*90;
 
@@ -169,18 +209,18 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
 //    motor_diff=motor_diff_raw;
 //  }
 
-  motor_out=motor_diff+90;
+//  motor_out=motor_diff+90;
 
   ST1.write(motor_out);
   ST2.write(0);
 
-//  if (on_off==0){
-//    digitalWrite(11, HIGH);
-//    on_off=1;
-//  }
-//
-//  else if (on_off==1){
-//    digitalWrite(11, LOW);
-//    on_off=0;
-//  }
+  if (on_off==0){
+    digitalWrite(11, HIGH);
+    on_off=1;
+  }
+
+  else if (on_off==1){
+    digitalWrite(11, LOW);
+    on_off=0;
+  }
 }

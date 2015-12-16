@@ -40,6 +40,11 @@ float vel_copy=0;
 volatile int count=0;
 int count_copy=0;
 
+volatile unsigned int counts;
+unsigned int counts_copy;
+unsigned int rpm;
+unsigned long timeold;
+unsigned long time_copy;
 
 Adafruit_L3GD20_Unified       gyro  = Adafruit_L3GD20_Unified(20);
 
@@ -51,7 +56,7 @@ void setup() {
   TCCR0B = 0;// same for TCCR0B
   TCNT0  = 0;//initialize counter value to 0
   //set compare match register for 500Hz increments
-  OCR0A=239;
+  OCR0A=73;
   // turn on CTC mode
   TCCR0A |= (1 << WGM01);
   // Set CS02 and CS00 bits for 1024 prescaler (that gives us 239 counts per interrupt to achieve 2ms interrupt)
@@ -84,6 +89,11 @@ void loop() {
 //  curr_out_copy=curr_out;
 //  counts_copy=counts;
   interrupts();
+
+//  if (count_copy>=180){
+//    des_pos=-0.785;
+//    count=0;
+//  }
   
   one_g=curr_g;
   curr_g=vel_copy;
@@ -107,12 +117,13 @@ void loop() {
 //  curr_out=(0.1944*curr_err) - (0.005663*one_err) - (0.01204*two_err) + (0.01133*three_err) + (0.006019*four_err) - (0.005667*five_err) + (4.364*one_out)- (7.601*two_out) + (6.603*three_out) - (2.861*four_out) + (0.4946*five_out);
 //  MATCHED ALPHA OF 3 curr_out=(0.1982*curr_err) - (0.5864*one_err) + (0.5784*two_err) - (0.1902*three_err) + (3.543*one_out)- (4.687*two_out) + (2.745*three_out) - (0.5999*four_out);
 //  TUSTIN ALPHA OF 3 curr_out=(0.09994*curr_err) - (0.1958*one_err) - (0.004033*two_err) + (0.1958*three_err) - (0.0959*four_err) + (3.541*one_out)- (4.682*two_out) + (2.74*three_out) - (0.5983*four_out);
-  curr_out=(0.1764*curr_err) - (0.3475*one_err) - (0.005278*two_err) + (0.3475*three_err) - (0.1711*four_err) + (3.487*one_out)- (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
-//  curr_out=(0.3495*curr_err) - (1.038*one_err) + (1.028*two_err) - (0.339*three_err) + (3.489*one_out)- (4.548*two_out) + (2.624*three_out) - (0.5655*four_out);
+//  TUSTIN ALPHA OF 10 curr_out=(0.1764*curr_err) - (0.3475*one_err) - (0.005278*two_err) + (0.3475*three_err) - (0.1711*four_err) + (3.487*one_out)- (4.542*two_out) + (2.619*three_out) - (0.5639*four_out);
+  curr_out=(2920*curr_err) - (2807*one_err) + (0.673*one_out);
 //  ALPHA OF 2, MATCHED curr_out=(0.1633*curr_err) - (0.4823*one_err) + (0.4749*two_err) - (0.1559*three_err) + (3.555*one_out)- (4.72*two_out) + (2.773*three_out) - (0.6079*four_out);
 //  ALPHA OF 5, TUSTIN curr_out=(0.1274*curr_err) - (0.2502*one_err) - (0.004479*two_err) + (0.2502*three_err) - (0.1229*four_err) + (3.521*one_out)- (4.632*two_out) + (2.696*three_out) - (0.586*four_out);
-//curr_out=(0.6555*curr_err) - (1.3*one_err) + (0.6443*two_err) + (1.877*one_out) - (0.8756*two_out);  
-  motor_diff=curr_out*90;
+
+ 
+  motor_diff=curr_out/2000.0*90;
 
 //    if (motor_diff_raw<-0.5){
 //    motor_diff=(motor_diff_raw+(1.5*(-25)))/1.5;
@@ -174,13 +185,18 @@ ISR(TIMER0_COMPA_vect){//timer0 interrupt 65Hz and gets velocity reading
   ST1.write(motor_out);
   ST2.write(0);
 
-//  if (on_off==0){
-//    digitalWrite(11, HIGH);
-//    on_off=1;
-//  }
-//
-//  else if (on_off==1){
-//    digitalWrite(11, LOW);
-//    on_off=0;
-//  }
+  if (on_off==0){
+    digitalWrite(11, HIGH);
+    on_off=1;
+  }
+
+  else if (on_off==1){
+    digitalWrite(11, LOW);
+    on_off=0;
+  }
 }
+void rpm_fun()
+ {
+   counts++;
+   //Each rotation, this interrupt function is run 12 times
+ }
